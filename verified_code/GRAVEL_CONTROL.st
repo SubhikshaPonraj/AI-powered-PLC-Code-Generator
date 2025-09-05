@@ -1,0 +1,23 @@
+(*
+    IEC 61131-3 Structured Text Program
+    Program Name: GRAVEL_CONTROL
+    Generated: 2025-09-03 12:29:59
+    Verified and compliant with IEC standards
+*)
+
+PROGRAM GRAVEL_CONTROL
+VAR_INPUT
+    BIN_LEVEL : BYTE;
+END_VAR
+VAR_OUTPUT
+    BIN_VALVE : BOOL;
+END_VAR
+VAR CONSTANT
+    LEVEL_THRESHOLD : BYTE := 60; 
+END_VAR
+
+IF BIN_LEVEL > LEVEL_THRESHOLD THEN
+    BIN_VALVE := FALSE;
+END_IF;
+
+END_PROGRAM

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IEC 61131-3 Code Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #4a5568;
+        }
+
+        .card-title i {
+            color: #667eea;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 10px 25px rgba(56, 161, 105, 0.4);
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .code-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+            position: relative;
+            border: 2px solid #2d3748;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        .code-title {
+            color: #cbd5e0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+        }
+
+        .download-section {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .download-section.show {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        .sources-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .source-item {
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            transition: background 0.3s ease;
+        }
+
+        .source-item:hover {
+            background: #edf2f7;
+        }
+
+        .source-header {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .source-preview {
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        }
+
+        .filename-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .filename-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-microchip"></i> IEC 61131-3 Code Generator</h1>
+            <p>AI-Powered Structured Text Programming Assistant</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-question-circle"></i>
+                Ask a Question
+            </div>
+            <form id="queryForm">
+                <div class="input-group">
+                    <label class="input-label" for="query">
+                        Describe your automation requirement:
+                    </label>
+                    <textarea 
+                        id="query" 
+                        class="query-input" 
+                        placeholder="e.g., Create a program to control a conveyor belt with start/stop buttons and emergency stop..."
+                        required
+                    ></textarea>
+                </div>
+                <button type="submit" class="btn btn-full" id="generateBtn">
+                    <i class="fas fa-code"></i> Generate Code
+                </button>
+            </form>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p id="loadingText">Generating code...</p>
+            </div>
+
+            <!-- Generated Code Section -->
+            <div class="card" id="codeSection" style="display: none;">
+                <div class="card-title">
+                    <i class="fas fa-code"></i>
+                    Generated Code
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-title">
+                            <i class="fas fa-file-code"></i>
+                            Structured Text Code
+                        </div>
+                        <button class="copy-btn" onclick="copyCode()">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <pre id="generatedCode"><!-- Code will appear here --></pre>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section" id="downloadSection">
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-download"></i>
+                        Download Code
+                    </div>
+                    <input type="text" id="filenameInput" class="filename-input" placeholder="Enter filename (e.g., motor_control)" />
+                    <button class="btn btn-success btn-full" onclick="downloadCode()">
+                        <i class="fas fa-download"></i> Download ST File
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sources Section -->
+            <div class="card" id="sourcesSection" style="display: none;">
+                <div class="card-title">
+                    <i class="fas fa-book"></i>
+                    Reference Sources
+                </div>
+                <div class="sources-list" id="sourcesList">
+                    <!-- Sources will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentCode = '';
+        let currentSources = [];
+
+        // DOM elements
+        const queryForm = document.getElementById('queryForm');
+        const queryInput = document.getElementById('query');
+        const resultsSection = document.getElementById('resultsSection');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const loadingText = document.getElementById('loadingText');
+        const codeSection = document.getElementById('codeSection');
+        const downloadSection = document.getElementById('downloadSection');
+        const sourcesSection = document.getElementById('sourcesSection');
+        const generateBtn = document.getElementById('generateBtn');
+
+        // Form submission
+        queryForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Reset UI
+            resetUI();
+            
+            // Show results section and start process
+            resultsSection.classList.add('show');
+            showLoading('Generating code...');
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Request failed');
+                }
+
+                // Display generated code
+                displayGeneratedCode(data);
+                
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+                hideLoading();
+            }
+        });
+
+        function resetUI() {
+            // Hide all sections
+            codeSection.style.display = 'none';
+            downloadSection.classList.remove('show');
+            sourcesSection.style.display = 'none';
+            
+            // Reset buttons
+            generateBtn.disabled = false;
+        }
+
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loadingSpinner.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+
+        function displayGeneratedCode(data) {
+            currentCode = data.answer;
+            currentSources = data.sources || [];
+
+            // Display the code
+            document.getElementById('generatedCode').textContent = currentCode;
+            
+            // Show code section
+            hideLoading();
+            codeSection.style.display = 'block';
+
+            // Display sources
+            displaySources(currentSources);
+
+            // Show download section
+            downloadSection.classList.add('show');
+
+            showToast('Code generated successfully!', 'success');
+        }
+
+        function displaySources(sources) {
+            const sourcesList = document.getElementById('sourcesList');
+            sourcesList.innerHTML = '';
+            
+            if (sources && sources.length > 0) {
+                sources.forEach(source => {
+                    const sourceItem = document.createElement('div');
+                    sourceItem.className = 'source-item';
+                    sourceItem.innerHTML = `
+                        <div class="source-header">
+                            <i class="fas fa-file-pdf"></i>
+                            ${source.source} - Page ${source.page}
+                        </div>
+                    `;
+                    sourcesList.appendChild(sourceItem);
+                });
+                sourcesSection.style.display = 'block';
+            }
+        }
+
+        async function downloadCode() {
+            if (!currentCode) {
+                showToast('No code available to download', 'error');
+                return;
+            }
+
+            const filename = document.getElementById('filenameInput').value.trim() || 'generated_code';
+
+            try {
+                // Create a blob from the code
+                const blob = new Blob([currentCode], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename.endsWith('.st') ? filename : filename + '.st';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showToast('Code downloaded successfully!', 'success');
+                
+            } catch (error) {
+                showToast('Download error: ' + error.message, 'error');
+            }
+        }
+
+        function copyCode() {
+            if (!currentCode) return;
+            
+            navigator.clipboard.writeText(currentCode).then(() => {
+                showToast('Code copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = currentCode;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Code copied to clipboard!', 'success');
+            });
+        }
+
+        function showToast(message, type) {
+            // Remove existing toasts
+            document.querySelectorAll('.toast').forEach(toast => toast.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Hide toast after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Add sample queries for better UX
+        const sampleQueries = [
+            "Create a traffic light control system with 3-state operation",
+            "Design a conveyor belt controller with start, stop, and emergency buttons",
+            "Program a temperature monitoring system with alarms",
+            "Build a tank filling system with level sensors",
+            "Create a motor starter with overload protection",
+            "Design a pneumatic cylinder control with position feedback",
+            "Program a batch mixing system with timer controls",
+            "Create a pump control system with pressure monitoring"
+        ];
+
+        // Add placeholder rotation
+        let placeholderIndex = 0;
+        function rotatePlaceholder() {
+            queryInput.placeholder = sampleQueries[placeholderIndex];
+            placeholderIndex = (placeholderIndex + 1) % sampleQueries.length;
+        }
+
+        // Start placeholder rotation
+        rotatePlaceholder();
+        setInterval(rotatePlaceholder, 4000);
+
+        // Auto-resize textarea
+        queryInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.max(120, this.scrollHeight) + 'px';
+        });
+
+        // Generate filename based on query
+        queryInput.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                const words = this.value.trim().toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, '')
+                    .split(/\s+/)
+                    .filter(word => word.length > 2)
+                    .slice(0, 3)
+                    .join('_');
+                
+                if (words) {
+                    document.getElementById('filenameInput').value = words;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

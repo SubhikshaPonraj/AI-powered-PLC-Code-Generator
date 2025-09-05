@@ -1,0 +1,37 @@
+PROGRAM AGV_Motor_Control
+VAR_INPUT
+    BUTTON1 : BOOL;
+    FWD_MOTOR_CMD : BOOL;
+    REV_MOTOR_CMD : BOOL;
+END_VAR
+VAR_OUTPUT
+    FWD_MOTOR : BOOL := FALSE;
+    REV_MOTOR : BOOL := FALSE;
+END_VAR
+VAR
+    Internal_FWD_CMD : BOOL;
+    Internal_REV_CMD : BOOL;
+END_VAR
+
+IF FWD_MOTOR_CMD AND REV_MOTOR_CMD THEN
+    Internal_FWD_CMD := FALSE;
+    Internal_REV_CMD := FALSE;
+ELSIF FWD_MOTOR_CMD THEN
+    Internal_FWD_CMD := TRUE;
+    Internal_REV_CMD := FALSE;
+ELSIF REV_MOTOR_CMD THEN
+    Internal_FWD_CMD := FALSE;
+    Internal_REV_CMD := TRUE;
+ELSE
+    Internal_FWD_CMD := FALSE;
+    Internal_REV_CMD := FALSE;
+END_IF;
+
+IF BUTTON1 THEN
+    Internal_FWD_CMD := FALSE;
+    Internal_REV_CMD := FALSE;
+END_IF;
+
+FWD_MOTOR := Internal_FWD_CMD;
+REV_MOTOR := Internal_REV_CMD;
+END_PROGRAM
