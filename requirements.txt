@@ -8,5 +8,10 @@ google-generativeai==0.4.1
 tensorflow==2.13.0
 keras==2.13.1   # replaces tf-keras, compatible with TF 2.13
 
+# Flask + server
+flask==2.3.3
+gunicorn==21.2.0
+
+
 # Optional: suppress logging noise
 absl-py==1.4.0
