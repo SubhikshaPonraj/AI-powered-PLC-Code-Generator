@@ -1,0 +1,23 @@
+﻿# Django
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite database
+db.sqlite3
+
+# Django stuff:
+media/
+staticfiles/
+
+# Environments
+.env
+venv/
+.venv/
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+
